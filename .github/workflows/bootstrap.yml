@@ -44,10 +44,14 @@ jobs:
             -o app/src/main/assets/proot-arm64 || \
           (sudo apt-get install -y proot && cp $(which proot) app/src/main/assets/proot-arm64) || \
           echo "WARNING: proot not downloaded"
-          ls -lh app/src/main/assets/ || true
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: |
+          ./gradlew assembleDebug --no-daemon 2>&1 | tee /tmp/build.log || true
+          echo "==== KOTLIN ERRORS ===="
+          grep -E "^e: |error:" /tmp/build.log || echo "no e: lines found"
+          echo "==== END ERRORS ===="
+          grep -q "BUILD SUCCESSFUL" /tmp/build.log && exit 0 || exit 1
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
